@@ -53,7 +53,7 @@ option overlay_root /overlay
 src/gz hitech_base http://openwrt.kytech.it/repository/$REV/$BOARD/packages/base
 src/gz hitech_luci http://openwrt.kytech.it/repository/$REV/$BOARD/packages/luci
 src/gz hitech_packages http://openwrt.kytech.it/repository/$REV/$BOARD/packages/packages
-src/gz hitech_routing http://openwrt.kytech.it/repository/$REV/$BOARD/packages/packages
+src/gz hitech_routing http://openwrt.kytech.it/repository/$REV/$BOARD/packages/routing
 EOF
 }
 
@@ -100,7 +100,7 @@ env_prepare_current() {
 	$BASEDIR/$TARGET/scripts/feeds install -a
 
 	echo "...moving config..."
-	cp "$BASEDIR/$TARGET/.config.init" "$BASEDIR/$TARGET/env/.config"
+	cp "$BASEDIR/$TARGET/.config.init" "$BASEDIR/$TARGET/.config"
 
 	echo "...make defconfig..."
 	make defconfig
@@ -130,7 +130,7 @@ env_clean_current() {
 	patch -p1 -Ri "$BASEDIR/$TARGET/env/trunk-openwrt.patch"
 	
 	#cleaning files directory
-	rm -R "$BASEDIR/$TARGET/files/*"
+	rm -R "$BASEDIR/$TARGET/env/files/*"
 	
 	#restore original repo
 	rm "$BASEDIR/$TARGET/package/system/opkg/files/opkg.conf"	
