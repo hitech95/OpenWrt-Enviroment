@@ -1,0 +1,11 @@
+--- a/miniupnpd/files/upnpd.config
++++ b/miniupnpd/files/upnpd.config
+@@ -1,6 +1,6 @@
+ config upnpd config
+-	option enable_natpmp	1
+-	option enable_upnp	1
++	option enable_natpmp	0
++	option enable_upnp	0
+ 	option secure_mode	1
+ 	option log_output	0
+ 	option download 	1024

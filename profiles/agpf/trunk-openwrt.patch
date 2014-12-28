@@ -1,0 +1,151 @@
+--- trunk/.config.init
++++ trunk/.config.init
+@@ -1,4 +1,6 @@
+ # Use "make defconfig" to expand this to a full .config
++CONFIG_TARGET_brcm63xx=y
++CONFIG_TARGET_brcm63xx_generic_AGPF_S0=y
+ 
+ # Per-package build logs in <buildroot>/logs
+ CONFIG_DEVEL=y
+--- trunk/target/linux/brcm63xx/image/Makefile
++++ trunk/target/linux/brcm63xx/image/Makefile
+@@ -191,20 +191,7 @@
+ endef
+ 
+ define Image/Build
+-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+-
+-	# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
+-	$(call Image/Build/CFE,$(1),V2500V_BB,6348,BTV2500V,,--layoutver 5)
+-	# RTA1025W_16 (numerous routers)
+-	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
+-	# RTA1320_16M (numerous routers)
+-	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
+-
+-	# Inventel Livebox
+-	$(call Image/Build/RedBoot,livebox)
+-
+-	# Netgear CVG834G
+-	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
++	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync	
+ 
+ 	# build dtb image list
+ 	$(foreach image,$(TARGET_$(PROFILE)_IMAGES),$(call Image/Build/$(image),$(1)))	
+--- trunk/files/etc/build
++++ trunk/files/etc/build
+@@ -0,0 +1,1 @@
++Compiled by hitech95
+--- trunk/package/network/services/hostapd/files/wps-hotplug.sh
+--- trunk/package/network/services/hostapd/files/wps-hotplug.sh
+@@ -1,8 +1,11 @@
+ #!/bin/sh
+ 
+ if [ "$ACTION" = "pressed" -a "$BUTTON" = "wps" ]; then
++	echo "255" > /sys/class/leds/AGPF-S0:red:service/brightness
+ 	for dir in /var/run/hostapd*; do
+ 		[ -d "$dir" ] || continue
+ 		hostapd_cli -p "$dir" wps_pbc
+ 	done
++	sleep 10
++	echo "0" > /sys/class/leds/AGPF-S0:red:service/brightness
+ fi
+--- trunk/package/base-files/files/etc/config/system
++++ trunk/package/base-files/files/etc/config/system
+@@ -10,3 +10,48 @@
+ 	list server	3.openwrt.pool.ntp.org
+ 	option enabled 1
+ 	option enable_server 0
++
++config led
++	option sysfs 'AGPF-S0:red:wifi'
++	option trigger 'netdev'
++	option dev 'wlan0'
++	option default '0'
++	option mode 'rx'
++	option name 'WIFI - RX'
++
++config led
++	option default '0'
++	option sysfs 'AGPF-S0:green:wifi'
++	option trigger 'netdev'
++	option dev 'wlan0'
++	option mode 'link tx'
++	option name 'WIFI - TX'
++
++config led
++	option default '0'
++	option sysfs 'AGPF-S0:green:internet'
++	option trigger 'netdev'
++	option mode 'link tx'
++	option name 'WAN - TX'
++	option dev 'eth1.2'
++
++config led
++	option default '0'
++	option name 'WAN - RX'
++	option sysfs 'AGPF-S0:red:internet'
++	option trigger 'netdev'
++	option mode 'rx'
++	option dev 'eth1.2'
++
++config led
++	option default '0'
++	option name 'USB'
++	option sysfs 'AGPF-S0:green:service'
++	option trigger 'usbdev'
++
++config led
++	option default '0'
++	option name 'Power - Status'
++	option sysfs 'AGPF-S0:green:power'
++	option trigger 'heartbeat'
++
++++ trunk/files/etc/config/network
++++ trunk/files/etc/config/network
+@@ -0,0 +1,46 @@
++
++config interface loopback
++	option ifname	lo
++	option proto	static
++	option ipaddr	127.0.0.1
++	option netmask	255.0.0.0
++
++config globals globals
++	option ula_prefix auto
++
++config interface lan
++	option force_link 1
++	option type bridge
++	option proto static
++	option ipaddr 192.168.1.1
++	option netmask 255.255.255.0
++	option ip6assign 60
++	option _orig_ifname 'eth1 radio0'
++	option _orig_bridge true
++	option ifname eth1.1
++
++config interface 'wan'
++	option ifname eth1.2
++	option proto pppoe
++
++config interface wan6
++	option proto dhcpv6
++	option ifname eth1.2
++	option reqaddress try
++	option reqprefix auto
++
++config switch
++	option name eth1
++	option reset 1
++	option enable_vlan 1
++
++config switch_vlan
++	option device eth1
++	option vlan 1
++	option ports '0 1 2 5t'
++
++config switch_vlan
++	option device eth1
++	option vlan 2
++	option ports '3 5t'
++
