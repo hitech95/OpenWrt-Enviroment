@@ -130,7 +130,7 @@ env_clean_current() {
 	patch -p1 -Ri "$BASEDIR/$TARGET/env/trunk-openwrt.patch"
 	
 	#cleaning files directory
-	rm -R "$BASEDIR/$TARGET/env/files/*"
+	rm -R "$BASEDIR/$TARGET/env/files/"
 	
 	#restore original repo
 	rm "$BASEDIR/$TARGET/package/system/opkg/files/opkg.conf"	
