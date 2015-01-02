@@ -1,0 +1,27 @@
+--- trunk/.config.init
++++ trunk/.config.init
+@@ -1,4 +1,6 @@
+ # Use "make defconfig" to expand this to a full .config
++CONFIG_TARGET_lantiq=y
++CONFIG_TARGET_lantiq_xway_DGN3500=y
+ 
+ # Per-package build logs in <buildroot>/logs
+ CONFIG_DEVEL=y
+--- trunk/files/etc/build
++++ trunk/files/etc/build
+@@ -0,0 +1,1 @@
++Compiled by hitech95
+--- trunk/package/network/services/hostapd/files/wps-hotplug.sh
+--- trunk/package/network/services/hostapd/files/wps-hotplug.sh
+@@ -1,8 +1,11 @@
+ #!/bin/sh
+ 
+ if [ "$ACTION" = "pressed" -a "$BUTTON" = "wps" ]; then
++	echo "255" > /sys/class/leds/wps/brightness
+ 	for dir in /var/run/hostapd*; do
+ 		[ -d "$dir" ] || continue
+ 		hostapd_cli -p "$dir" wps_pbc
+ 	done
++	sleep 10
++	echo "0" > /sys/class/leds/wps/brightness
+ fi
