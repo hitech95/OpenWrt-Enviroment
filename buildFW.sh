@@ -118,7 +118,7 @@ env_prepare_current() {
 
 env_deploy_current() {
 	echo "...deploying images..."
-	local BOARD = `grep TARGET_BOARD .config | cut -f 2 -d \"`
+	local BOARD=`grep TARGET_BOARD .config | cut -f 2 -d \"`
 	local RDIR=$BASEDIR/$TARGET/bin/$BOARD
 	local REV=r`git log | grep -m 1 git-svn-id | awk '{ gsub(/.*@/, "", $0); print r$1 }'`
 	mkdir -p "$BASEDIR/$OUT/$REV/"
