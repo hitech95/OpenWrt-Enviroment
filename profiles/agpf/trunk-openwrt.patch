@@ -7,6 +7,102 @@
  
  # Per-package build logs in <buildroot>/logs
  CONFIG_DEVEL=y
+@@ -165,7 +167,7 @@
+ CONFIG_PACKAGE_kmod-ath9k=m
+ CONFIG_PACKAGE_kmod-ath9k-common=m
+ CONFIG_PACKAGE_kmod-ath9k-htc=m
+-CONFIG_PACKAGE_kmod-b43=m
++CONFIG_PACKAGE_kmod-b43=y
+ CONFIG_PACKAGE_kmod-brcmfmac=m
+ CONFIG_PACKAGE_kmod-brcmsmac=m
+ CONFIG_PACKAGE_kmod-brcmutil=m
+--- trunk/target/linux/brcm63xx/base-files/lib/brcm63xx.sh
++++ trunk/target/linux/brcm63xx/base-files/lib/brcm63xx.sh
+@@ -81,6 +81,11 @@
+ 		status_led="AR1004G:green:power"
+ 		brcm63xx_has_reset_button="true"
+ 		;;
++	AGPF)
++		status_led="AGPF-S0:green:power"
++		brcm63xx_has_reset_button="true"
++		ifname=eth1
++		;;
+ 	AW4139 |\
+ 	AW4339U)
+ 		status_led="dsl-274xb:green:power"
+--- trunk/target/linux/brcm63xx/base-files/etc/uci-defaults/02_network
++++ trunk/target/linux/brcm63xx/base-files/etc/uci-defaults/02_network
+@@ -47,7 +47,6 @@
+ 96348GW-A |\
+ 96358VW |\
+ 96358VW2 |\
+-AGPF-S0 |\
+ "CPVA502+" |\
+ DV201AMR |\
+ DWV-S0 |\
+@@ -59,9 +58,24 @@
+ 	ucidef_add_switch "eth1" "1" "1"
+ 	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 4 5"
+ 	;;
++	
++AGPF-S0)
++	ucidef_set_interfaces_lan_wan "eth1.1" "eth1.2"
++	ucidef_add_switch "eth1" "1" "1"
++	ucidef_add_switch_vlan "eth1" "1" "0 1 2 5t"
++	ucidef_add_switch "eth1" "1" "2"
++	ucidef_add_switch_vlan "eth1" "2" "3 5t"
++	;;
++
++HW553)
++	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
++	ucidef_add_switch "eth0" "1" "1"
++	ucidef_add_switch_vlan "eth1" "1" "0 1 2 5t"
++	ucidef_add_switch "eth0" "1" "2"
++	ucidef_add_switch_vlan "eth1" "2" "3 5t"
++	;;
+ 
+ AW4139 |\
+-HW553 |\
+ HW556*)
+ 	ucidef_set_interface_lan "eth0.1"
+ 	ucidef_add_switch "eth0" "1" "1"
+--- trunk/target/linux/brcm63xx/base-files/etc/uci-defaults/01_leds
++++ trunk/target/linux/brcm63xx/base-files/etc/uci-defaults/01_leds
+@@ -11,17 +11,30 @@
+ 	ucidef_set_led_netdev "lan" "LAN" "A4001N1:green:eth" "eth0"
+ 	ucidef_set_led_usbdev "usb" "USB" "A4001N1:green:3g" "1-1"
+ 	;;
++	
+ 96328dg2x2)
+ 	ucidef_set_led_usbdev "usb" "USB" "A4001N:green:usb" "1-1"
+ 	;;
++	
+ 'F@ST2704V2')
+ 	ucidef_set_led_usbdev "usb" "USB" "F@ST2704V2:green:usb" "1-1"
+ 	;;
++	
++AGPF-S0)
++	ucidef_set_led_default "power_blue" "Power Status" "AGPF-S0:green:power" "1"
++	ucidef_set_led_netdev "wifi_green" "WIFI - RXTX" "AGPF-S0:green:wifi" "wlan0"
++	ucidef_set_led_netdev "wan_green" "WAN - RXTX" "AGPF-S0:green:internet" "eth1.1"
++	ucidef_set_led_usbdev "usb" "USB - Status" "AGPF-S0:green:service" "1-1"
++	;;
++	
+ HW553)
+-	ucidef_set_led_netdev "lan" "LAN" "HW553:blue:lan" "eth0"
+-	ucidef_set_led_usbdev "usb1" "USB1" "HW553:red:hspa" "1-1"
+-	ucidef_set_led_usbdev "usb2" "USB2" "HW553:blue:hspa" "1-2"
++	ucidef_set_led_default "power_blue" "Power Status" "HW553:blue:power" "1"
++	ucidef_set_led_netdev "wifi_red" "WIFI - RXTX" "HW553:red:wifi" "wlan0"
++	ucidef_set_led_netdev "wan_blue" "WAN - RXTX" "HW553:blue:lan" "eth0.2"
++	ucidef_set_led_usbdev "usb1" "USB1 - Status" "HW553:red:hspa" "1-1"
++	ucidef_set_led_usbdev "usb2" "USB2 - Status" "HW553:blue:hspa" "1-2"
+ 	;;
++	
+ HW556*)
+ 	ucidef_set_led_netdev "lan" "LAN" "HW556:red:dsl" "eth0"
+ 	ucidef_set_led_usbdev "usb" "USB" "HW556:red:hspa" "1-2"
+
 --- trunk/target/linux/brcm63xx/image/Makefile
 +++ trunk/target/linux/brcm63xx/image/Makefile
 @@ -191,20 +191,7 @@
@@ -49,103 +145,3 @@
 +	sleep 10
 +	echo "0" > /sys/class/leds/AGPF-S0:red:service/brightness
  fi
---- trunk/package/base-files/files/etc/config/system
-+++ trunk/package/base-files/files/etc/config/system
-@@ -10,3 +10,48 @@
- 	list server	3.openwrt.pool.ntp.org
- 	option enabled 1
- 	option enable_server 0
-+
-+config led
-+	option sysfs 'AGPF-S0:red:wifi'
-+	option trigger 'netdev'
-+	option dev 'wlan0'
-+	option default '0'
-+	option mode 'rx'
-+	option name 'WIFI - RX'
-+
-+config led
-+	option default '0'
-+	option sysfs 'AGPF-S0:green:wifi'
-+	option trigger 'netdev'
-+	option dev 'wlan0'
-+	option mode 'link tx'
-+	option name 'WIFI - TX'
-+
-+config led
-+	option default '0'
-+	option sysfs 'AGPF-S0:green:internet'
-+	option trigger 'netdev'
-+	option mode 'link tx'
-+	option name 'WAN - TX'
-+	option dev 'eth1.2'
-+
-+config led
-+	option default '0'
-+	option name 'WAN - RX'
-+	option sysfs 'AGPF-S0:red:internet'
-+	option trigger 'netdev'
-+	option mode 'rx'
-+	option dev 'eth1.2'
-+
-+config led
-+	option default '0'
-+	option name 'USB'
-+	option sysfs 'AGPF-S0:green:service'
-+	option trigger 'usbdev'
-+
-+config led
-+	option default '0'
-+	option name 'Power - Status'
-+	option sysfs 'AGPF-S0:green:power'
-+	option trigger 'heartbeat'
-+
-+++ trunk/files/etc/config/network
-+++ trunk/files/etc/config/network
-@@ -0,0 +1,46 @@
-+
-+config interface loopback
-+	option ifname	lo
-+	option proto	static
-+	option ipaddr	127.0.0.1
-+	option netmask	255.0.0.0
-+
-+config globals globals
-+	option ula_prefix auto
-+
-+config interface lan
-+	option force_link 1
-+	option type bridge
-+	option proto static
-+	option ipaddr 192.168.1.1
-+	option netmask 255.255.255.0
-+	option ip6assign 60
-+	option _orig_ifname 'eth1 radio0'
-+	option _orig_bridge true
-+	option ifname eth1.1
-+
-+config interface 'wan'
-+	option ifname eth1.2
-+	option proto pppoe
-+
-+config interface wan6
-+	option proto dhcpv6
-+	option ifname eth1.2
-+	option reqaddress try
-+	option reqprefix auto
-+
-+config switch
-+	option name eth1
-+	option reset 1
-+	option enable_vlan 1
-+
-+config switch_vlan
-+	option device eth1
-+	option vlan 1
-+	option ports '0 1 2 5t'
-+
-+config switch_vlan
-+	option device eth1
-+	option vlan 2
-+	option ports '3 5t'
-+
