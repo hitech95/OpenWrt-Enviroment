@@ -1,21 +1,36 @@
 --- trunk/.config.init
 +++ trunk/.config.init
-@@ -1,4 +1,6 @@
+@@ -1,2 +1,4 @@
  # Use "make defconfig" to expand this to a full .config
 +CONFIG_TARGET_lantiq=y
 +CONFIG_TARGET_lantiq_xway_DGN3500=y
  
- # Per-package build logs in <buildroot>/logs
- CONFIG_DEVEL=y
-@@ -162,7 +164,7 @@
- CONFIG_PACKAGE_ATH_DFS=y
- CONFIG_PACKAGE_kmod-ath10k=m
+@@ -81,3 +83,3 @@ CONFIG_PACKAGE_kmod-ath10k=m
  CONFIG_PACKAGE_kmod-ath5k=m
 -CONFIG_PACKAGE_kmod-ath9k=m
 +CONFIG_PACKAGE_kmod-ath9k=y
  CONFIG_PACKAGE_kmod-ath9k-common=m
- CONFIG_PACKAGE_kmod-ath9k-htc=m
- CONFIG_PACKAGE_kmod-b43=m
+--- trunk/target/linux/lantiq/base-files/sbin/dsl_notify.sh
++++ trunk/target/linux/lantiq/base-files/sbin/dsl_notify.sh
+@@ -18,13 +18,13 @@
+ 
+ local default
+ config_load system
+-config_get default led_adsl default
++config_get default led_dsl default
+ if [ "$default" != 1 ]; then
+ 	case "$DSL_INTERFACE_STATUS" in
+-	  "HANDSHAKE")  led_timer dsl 500 500;;
+-	  "TRAINING")   led_timer dsl 200 200;;
+-	  "UP")		led_on dsl;;
+-	  *)		led_off dsl
++	  "HANDSHAKE")  led_timer DGN3500:dsl 500 500;;
++	  "TRAINING")   led_timer DGN3500:dsl 200 200;;
++	  "UP")		led_on DGN3500:dsl;;
++	  *)		led_off DGN3500:dsl
+ 	esac
+ fi
+ 
 --- trunk/target/linux/lantiq/dts/DGN3500.dtsi
 +++ trunk/target/linux/lantiq/dts/DGN3500.dtsi
 @@ -150,34 +150,42 @@
@@ -89,26 +104,6 @@
 + 		};
 + 	};
  };
---- trunk/target/linux/lantiq/base-files/sbin/dsl_notify.sh
-+++ trunk/target/linux/lantiq/base-files/sbin/dsl_notify.sh
-@@ -18,13 +18,13 @@
- 
- local default
- config_load system
--config_get default led_adsl default
-+config_get default led_dsl default
- if [ "$default" != 1 ]; then
- 	case "$DSL_INTERFACE_STATUS" in
--	  "HANDSHAKE")  led_timer dsl 500 500;;
--	  "TRAINING")   led_timer dsl 200 200;;
--	  "UP")		led_on dsl;;
--	  *)		led_off dsl
-+	  "HANDSHAKE")  led_timer led_dsl 500 500;;
-+	  "TRAINING")   led_timer led_dsl 200 200;;
-+	  "UP")		led_on led_dsl;;
-+	  *)		led_off led_dsl
- 	esac
- fi
 --- trunk/target/linux/lantiq/base-files/etc/uci-defaults/02_network
 +++ trunk/target/linux/lantiq/base-files/etc/uci-defaults/02_network
 @@ -119,12 +119,67 @@

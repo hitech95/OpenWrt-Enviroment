@@ -1,5 +1,5 @@
---- a/modules/admin-full/luasrc/model/cbi/admin_network/dhcp.lua
-+++ b/modules/admin-full/luasrc/model/cbi/admin_network/dhcp.lua
+--- a/modules/luci-mod-admin-full/luasrc/model/cbi/admin_network/dhcp.lua
++++ b/modules/luci-mod-admin-full/luasrc/model/cbi/admin_network/dhcp.lua
 @@ -224,7 +224,9 @@ s = m:section(TypedSection, "host", translate("Static Leases"),
  		"only hosts with a corresponding lease are served.") .. "<br />" ..
  	translate("Use the <em>Add</em> Button to add a new lease entry. The <em>MAC-Address</em> " ..
@@ -21,21 +21,13 @@
  hostid = s:option(Value, "hostid", translate("<abbr title=\"Internet Protocol Version 6\">IPv6</abbr>-Suffix (hex)"))
  
  sys.net.arptable(function(entry)
---- a/modules/admin-full/luasrc/view/admin_system/flashops.htm
-+++ b/modules/admin-full/luasrc/view/admin_system/flashops.htm
+--- a/modules/luci-mod-admin-full/luasrc/view/admin_system/flashops.htm
++++ b/modules/luci-mod-admin-full/luasrc/view/admin_system/flashops.htm
 @@ -44,6 +44,7 @@ $Id$
  				</div>
  				<% end %>
  			</div>
-+			<div class="cbi-section-descr"><%:Note: This router's firmware has been modified to support the 'reset' button located in the bottom of the WNDR3700. If you press the 'reset' button, the router resets itself to the initial settings (by removing the jffs partition completely and thus reverting to the original configuration files included in the firmware). If you want to disable this reset feature, delete the file '/etc/hotplug.d/button/05-reset'.%></div>
++			<div class="cbi-section-descr"><%:Note: This router's firmware has been modified to support the 'reset' button located in the bottom of the Router. If you press the 'reset' button, the router resets itself to the initial settings (by removing the jffs partition completely and thus reverting to the original configuration files included in the firmware). If you want to disable this reset feature, delete the file '/etc/hotplug.d/button/05-reset'.%></div>
  			<br />
  			<div class="cbi-section-descr"><%:To restore configuration files, you can upload a previously generated backup archive here.%></div>
  			<div class="cbi-section-node">
---- a/modules/base/root/etc/config/luci
-+++ b/modules/base/root/etc/config/luci
-@@ -22,3 +22,5 @@ config internal ccache
- 	option enable 1
- 		
- config internal themes
-+	option Bootstrap '/luci-static/bootstrap'
-+

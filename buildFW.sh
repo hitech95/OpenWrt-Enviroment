@@ -17,7 +17,7 @@ Usage: $0 <command> [arguments]
 Commands:
 	help					This help text
 	build all				Build all enviromets 
-	build <name>			Build specified enviroment
+	build <name> [fast]		Build specified enviroment
 	profile new <name>		Add a new profile
 	profile remove <name>	Remove a new profile
 	download				Download a setup the toolchain
@@ -43,7 +43,7 @@ env_write_version(){
 }
 
 env_repository_current() {
-	local BOARD=`grep TARGET_BOARD .config | cut -f 2 -d \"`
+	local BOARD=$1
 	local REV=r`git log | grep -m 1 git-svn-id | awk '{ gsub(/.*@/, "", $0); print r$1 }'`
 	cat > package/system/opkg/files/opkg.conf <<EOF
 dest root /
@@ -73,17 +73,16 @@ env_build() {
 		$BASEDIR/$TARGET/scripts/env switch $NAME
 		if [ "$?" = "0" ]; then		
 			echo "Building $NAME env"
-			env_prepare_current
-			env_build_current
-			env_deploy_current
-			env_clean_current			
+			env_prepare_current $NAME
+			env_build_current $NAME $2
+			env_deploy_current $NAME
+			env_clean_current $NAME
 			cd $BASEDIR
 			echo "Done."
 		else
 			error "environment '$NAME' not found"
 		fi
 	fi
-
 }
 
 env_prepare_current() {
@@ -113,7 +112,7 @@ env_prepare_current() {
 
 	echo "...patching repository..."
 	cp "$BASEDIR/$TARGET/package/system/opkg/files/opkg.conf" "$BASEDIR/$TARGET/package/system/opkg/files/opkg.conf.original"
-	env_repository_current
+	env_repository_current $1
 }
 
 env_deploy_current() {
@@ -121,8 +120,8 @@ env_deploy_current() {
 	local BOARD=`grep TARGET_BOARD .config | cut -f 2 -d \"`
 	local RDIR=$BASEDIR/$TARGET/bin/$BOARD
 	local REV=r`git log | grep -m 1 git-svn-id | awk '{ gsub(/.*@/, "", $0); print r$1 }'`
-	mkdir -p "$BASEDIR/$OUT/$REV/"
-	mv "$RDIR" "$BASEDIR/$OUT/$REV/"
+	mkdir -p "$BASEDIR/$OUT/$REV/$1/"
+	mv "$RDIR" "$BASEDIR/$OUT/$REV/$1"
 }
 
 env_clean_current() {
@@ -138,10 +137,18 @@ env_clean_current() {
 	mv "$BASEDIR/$TARGET/package/system/opkg/files/opkg.conf.original" "package/system/opkg/files/opkg.conf"
 }
 
-env_build_current() {	
-	echo "...clean and make ..."
-	nice -n 17 ionice -c 3 -n 7 rm -rf bin tmp build_dir/target-* staging_dir/target-*
-	nice -n 17 ionice -c 3 -n 7 make -j 5 V=s 2>&1 | tee build.log | grep -i -E "^make.*(error|[12345]...Entering dir)"	
+env_build_current() {
+	local SPEED="$2"
+
+	if [ "$SPEED" == "fast" ]; then
+		echo "...clean and make ... Fast!"
+		nice -n 5 ionice -c 2 -n 3 rm -rf bin tmp build_dir/target-* staging_dir/target-*
+		make -j 3 V=s 2>&1 | tee build.log | grep -i -E "^make.*(error|[12345]...Entering dir)"	
+	else
+		echo "...clean and make ... Slowly"
+		nice -n 17 ionice -c 3 -n 7 rm -rf bin tmp build_dir/target-* staging_dir/target-*
+		nice -n 17 ionice -c 3 -n 7 make -j 5 V=s 2>&1 | tee build.log | grep -i -E "^make.*(error|[12345]...Entering dir)"
+	fi
 }
 
 env_download() {
